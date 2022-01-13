@@ -1,0 +1,5 @@
+Exception during training: load_training_data() missing 1 required positional argument: 'csv_folder'
+Traceback (most recent call last):
+  File "/opt/program/train", line 85, in main
+    train_X, train_y = load_training_data()
+TypeError: load_training_data() missing 1 required positional argument: 'csv_folder'

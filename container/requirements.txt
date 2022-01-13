@@ -1,0 +1,8 @@
+numpy
+scipy
+scikit-learn
+pandas
+flask
+gunicorn
+boto3
+botocore
