@@ -1,6 +1,6 @@
 import pickle
 
-from .config import model_file
+from config.config import model_file
 
 
 class ScoringService(object):

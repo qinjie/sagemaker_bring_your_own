@@ -13,8 +13,8 @@ then
 fi
 
 # Add execution mode for train and serve files 
-chmod +x algo/train
-chmod +x algo/serve
+chmod +x app/train
+chmod +x app/serve
 
 # Get the account number associated with the current IAM credentials
 account=$(aws sts get-caller-identity --query Account --output text)

@@ -1,82 +1,137 @@
 # SageMaker Bring Your Own Algorithm Container
 
-SageMaker supports two execution modes: _training_ where the algorithm uses input data to train a new model and _serving_ where the algorithm accepts HTTP requests and uses the previously trained model to do an inference.
 
-This project packages our own algorithm into a Docker image to be used in SageMaker. This same container image supports both training and scoring in SageMaker.
 
-The inference server in container is setup using `nginx`, `gunicorn`, and `flask`.
+SageMaker allows you to bring your own container. This project packages your own algorithm into a Docker image to be used in SageMaker. This same container image supports both **training** and **scoring**.
 
-## Folder Structure
+- **training**: the algorithm uses input data to train a new model
+- **serving**: the algorithm accepts HTTP requests and uses the previously trained model to do an inference
+
+The container setup an inference server using `nginx`, `gunicorn`, and `flask`, where <u>nginx</u> provides reverse proxy, <u>gunicorn</u> is the load balancer, and <u>flask</u> for multiple web servers.
+
+#### Important Folders in Container
+Here are the 2 important folders in the container:
+- `/opt/program`: Contains the code files in the `app/` folder.
+- `/opt/ml`: Contains all input/output files, e.g. training data, generated model, and inference result files. It is commonly use S3 buckets to store these files. SageMaker will manage the file transfers between `/opt/ml` and s3 bucket(s). 
+
+#### Prerequisite
+
+- AWS CLI v1
+- Docker
+- Python 3.8+
+
+
+
+
+## Project Structure
+
+The container folder contains following files and folders.
 
 - **Dockerfile**: Describes how the image is built and what it contains.
+- **build_and_push.sh**: Builds the Docker image and push it to the [Amazon EC2 Container Registry (ECR)][ecr] so that it can be deployed to SageMaker.
+- **app** folder: Contains code to be run in the container.
+- **test** folder: Contains the scripts to run a simple training and inference jobs locally. Used for testing.
+- **sagemaker_bring_your_own.ipynb**: Jupyter notebook file which can be setup in a SageMaker instance.
 
-- **build_and_push.sh**: Build the Docker image and push it to the [Amazon EC2 Container Registry (ECR)][ecr] so that it can be deployed to SageMaker.
 
-- **algo** folder: Contains the application to run in the container.
 
-- **local-test** folder: Containing the scripts to run a simple training and inference jobs locally. Used for testing.
-
-### Code Files
+### Code Files - app Folder
 
 This folder contains the main scripts for traning and scoring.
 
 When SageMaker starts a container, it will invoke the container with an argument of either **train** or **serve**.
 
-- **train**: The main program for training the model. Modify this to include your training code.
-- **predictor.py**: The algorithm-specific inference server. Modify this file with your own algorithm's code.
+- **train**: It activates the code to train the model.
+- **serve**, **wsgi.py**, **nginx.conf**: They setup a web server for inference. 
 
-#### Other Files
+Following files may need to be updated for your own algorithm.
 
-In most cases, you can use following files as-is.
+- **predictor.py**: It uses flask to setup 2 endpoints: `/ping` and `/invocations`. Update `/invocations` to read input data from `flask.request.data`, format them before calling your model to perform inference.
+- **training/training.py**: Any training related code files are to be placed in `trainig` folder.
+- **scoring/scoring.py**: Any scoring related code files are to be placed in `scoring` folder.
+- **config/config.py**: Any common code files to be placed in `config` folder.
 
-- **serve**: The wrapper that starts the inference server.
-- **wsgi.py**: The start up shell for the individual server workers. This only needs to be changed if you changed where predictor.py is located or is named.
-- **nginx.conf**: The configuration for the nginx master server that manages the multiple workers.
 
-### Testing
 
-Apart fr
+## Testing
+
+We can perform tests in local machine before test it in SageMaker. The `test` folder contains scripts and dummy data for testing. 
+
+The `test_dir` folder contains following subfolders:
+
+- **input**: Input training data and configuration files
+- **model**: Generated model files after training
+- **output**: Result files from inference
+
+We will mount `test_dir` folder to the `/opt/ml` folder in the container.
+
+
+
+### Step by Step Debugging
+
+1. Build the docker image with name (or tag) `sagemaker-bring-your-own`.
 
 ```bash
-
+docker build -t sagemaker-bring-your-own .
 ```
+
+2. Run the container.
+   - `--rm`: Remove the container when the command ends.
+   - `-it`: Run it in interactive mode.
+   - `--entrypoint`: Change the entrypoint to `/bin/bash` so that we can run command to debug our program.
+   - `-v `: Map `test_dir` folder to `/opt/ml` folder in container. **Note:** The local path to `test_dir` must be an absolute path. (Docker requirement)
+   - `-p 8080:8080`: Map the port 8080 which will be used for inference.
 
 ```bash
-
+docker run --rm -it --entrypoint /bin/bash -v D:/github-data-govtech/sagemaker_bring_your_own/container/test/test_dir:/opt/ml -p 8080:8080 sagemaker-bring-your-own
 ```
+
+3. You will be directed to bash and in the `/opt/program` folder when container runs.
+
+4. Test the **<u>train mode</u>** by running the `train` script. 
 
 ```bash
-
+python train
 ```
 
-### Folder `local_test`
-
-This folder contains scripts and sample data for testing the built container image on the local machine.
-
-#### train_local.sh
-
-Instantiate the container configured for training.
+5. Test the **<u>serve mode</u>** by running the `serve` script. A web server will be running at port 8080.
 
 ```
-./train_local.sh sagemaker_bring_your_own
-docker run -it --entrypoint /bin/bash -v D:/tmp/scikit_bring_your_own/container/local_test/test_dir:/opt/ml sagemaker_bring_your_own /bin/bash
+python serve
 ```
 
-- **serve-local.sh**: Instantiate the container configured for serving.
-- **predict.sh**: Run predictions against a locally instantiated server.
-- **test-dir**: The directory that gets mounted into the container with test data mounted in all the places that match the container schema.
-- **payload.csv**: Sample data for used by predict.sh for testing the server.
+6. Start another terminal session. Navigate into `container` folder in the project folder. Run following command to invoke the inference with a test file `test/data/payload.csv` 
 
-#### Subfolder `test_dir`
+```bash
+curl --data-binary @test/data/payload.csv -H "Content-Type: text/csv" -v http://localhost:8080/invocation
+```
 
-This subfolder is mounted into the container and mimics the directory structure in container that SageMaker would create for the running container during training or hosting.
+7. Make sure there is no error from all above invocations.
 
-- **input/config/\*.json**: The hyperparameters for the training job.
-- **input/data/training/input.csv**: The training data.
-- **model**: The directory where the algorithm writes the model file.
-- **output**: The directory where the algorithm can write its success or failure file.
 
-## Environment variables
+
+### Run Container Directly
+
+Once we confirm that the code works fine, we can run the bash test files directly. Note: these bash files are for Linux environment.  
+
+- Train Model: Generated model will be saved in `test/test_dir/model` fodler
+```
+./train_local.sh sagemaker-bring-your-own
+```
+- Setup Server: Load model from `test/test_dir/model` and run a web server at port 8080
+```
+./serve_local.sh sagemaker-bring-your-own
+```
+- Invocation: Invoke server with test file `test/data/payload.csv`
+```
+./predict.sh test/data/payload.csv text/csv
+```
+
+
+
+## Others
+
+### Environment Variables
 
 When you create an inference server, you can control some of Gunicorn's options via environment variables. These
 can be supplied as part of the CreateModel API call.

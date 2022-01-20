@@ -7,7 +7,7 @@ import pandas as pd
 import json
 from sklearn.neighbors import KNeighborsClassifier
 
-from .config import training_folder, param_file, model_file, failure_file
+from config.config import training_folder, param_file, model_file, failure_file
 
 
 class TrainingService():

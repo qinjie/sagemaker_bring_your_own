@@ -6,7 +6,7 @@
 # First argument will be used as the image name
 image=$1
 
-# Setup local folders
+# Clean up local folders
 mkdir -p test_dir/model
 mkdir -p test_dir/output
 rm test_dir/model/*

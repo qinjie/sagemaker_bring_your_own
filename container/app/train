@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from custom.training import TrainingService
+from training.training import TrainingService
 
 
 def main():

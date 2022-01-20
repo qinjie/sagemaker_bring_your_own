@@ -7,7 +7,7 @@ import flask
 import pandas as pd
 
 # The flask app for serving predictions
-from custom.scoring import ScoringService
+from scoring.scoring import ScoringService
 
 app = flask.Flask(__name__)
 
