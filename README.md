@@ -2,7 +2,11 @@
 
 
 
-SageMaker allows you to bring your own container. This project packages your own algorithm into a Docker image to be used in SageMaker. This same container image supports both **training** and **scoring**.
+SageMaker allows you to bring your own container. This project packages your own algorithm into a Docker image to be used in SageMaker. 
+
+![image-20220121190645820](https://raw.githubusercontent.com/qinjie/picgo-images/main/image-20220121190645820.png)
+
+This same container image supports both **training** and **scoring**.
 
 - **training**: the algorithm uses input data to train a new model
 - **serving**: the algorithm accepts HTTP requests and uses the previously trained model to do an inference
