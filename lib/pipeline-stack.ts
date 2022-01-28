@@ -8,7 +8,7 @@ import {
   createCdkBuildAction,
   createCfnDeployAction,
   createDockerBuildAction,
-  createGithubSourceAction,
+  createSourceAction,
 } from "../cdk-common/codepipeline-utils";
 
 export interface PipelineStackProps extends cdk.StackProps {
@@ -86,14 +86,7 @@ export class PipelineStack extends cdk.Stack {
       stages: [
         {
           stageName: "Source",
-          actions: [
-            createGithubSourceAction(sourceOutput, {
-              repo: props.code_repo_name,
-              branch: props.code_repo_branch,
-              owner: props.code_repo_owner,
-              secret_var: props.code_repo_secret_var,
-            }),
-          ],
+          actions: [createSourceAction(sourceOutput, { ...props })],
         },
         {
           stageName: "Build",
