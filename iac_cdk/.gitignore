@@ -8,7 +8,8 @@ node_modules
 # CDK asset staging directory
 .cdk.staging
 /cdk.out/*
-
+# !/cdk.out/*.template.json
+dist
 
 # misc
 .DS_Store

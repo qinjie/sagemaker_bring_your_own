@@ -1,4 +1,5 @@
 import cdk = require("@aws-cdk/core");
+import iam = require("@aws-cdk/aws-iam");
 
 export class PermissionsBoundary implements cdk.IAspect {
   private readonly permissionsBoundaryArn: string;

@@ -8,6 +8,7 @@ import {
   createDockerBuildAction,
   createSourceAction,
 } from "../cdk-common/codepipeline-utils";
+import { BUILDSPEC_FILE } from "./config";
 
 export interface DeploymentStackProps extends cdk.StackProps {
   // basic props for cdk
@@ -83,7 +84,9 @@ export class DeploymentStack extends cdk.Stack {
               {
                 repositoryUri: this.ecrRepo.repositoryUri,
                 containerName: this.containerName,
-              }
+              },
+              2,
+              BUILDSPEC_FILE
             ),
           ],
         },

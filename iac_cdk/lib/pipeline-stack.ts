@@ -8,8 +8,9 @@ import {
   createCdkBuildAction,
   createCfnDeployAction,
   createDockerBuildAction,
-  createGithubSourceAction,
+  createSourceAction,
 } from "../cdk-common/codepipeline-utils";
+import { BUILDSPEC_FILE, IAC_CDK_FOLDER } from "./config";
 
 export interface PipelineStackProps extends cdk.StackProps {
   // basic props for cdk
@@ -86,14 +87,7 @@ export class PipelineStack extends cdk.Stack {
       stages: [
         {
           stageName: "Source",
-          actions: [
-            createGithubSourceAction(sourceOutput, {
-              repo: props.code_repo_name,
-              branch: props.code_repo_branch,
-              owner: props.code_repo_owner,
-              secret_var: props.code_repo_secret_var,
-            }),
-          ],
+          actions: [createSourceAction(sourceOutput, { ...props })],
         },
         {
           stageName: "Build",
@@ -102,7 +96,9 @@ export class PipelineStack extends cdk.Stack {
               this,
               sourceOutput,
               cdkBuildOutput,
-              pipelineRole
+              pipelineRole,
+              1,
+              IAC_CDK_FOLDER
             ),
             createDockerBuildAction(
               this,
@@ -112,7 +108,9 @@ export class PipelineStack extends cdk.Stack {
               {
                 repositoryUri: this.ecrRepo.repositoryUri,
                 containerName: "",
-              }
+              },
+              2,
+              BUILDSPEC_FILE
             ),
           ],
         },
