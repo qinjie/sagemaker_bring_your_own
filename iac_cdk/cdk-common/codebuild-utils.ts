@@ -11,7 +11,7 @@ Functions which creates BuildProject for Actions in CodePipeline
 export const createCdkBuildProject = (
   scope: cdk.Construct,
   id: string,
-  cdkFolder: string
+  cdkFolder: string = "."
 ) =>
   new codebuild.PipelineProject(scope, `${id}`, {
     environment: {
@@ -29,7 +29,7 @@ export const createCdkBuildProject = (
         },
       },
       artifacts: {
-        "base-directory": "dist",
+        "base-directory": `${cdkFolder}/dist`,
         files: ["*.template.json"],
       },
     }),

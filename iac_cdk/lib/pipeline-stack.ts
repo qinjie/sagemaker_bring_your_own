@@ -4,7 +4,6 @@ import * as iam from "@aws-cdk/aws-iam";
 import * as kms from "@aws-cdk/aws-kms";
 import * as s3 from "@aws-cdk/aws-s3";
 import * as cdk from "@aws-cdk/core";
-import { runMain } from "module";
 import {
   createCdkBuildAction,
   createCfnDeployAction,
@@ -108,7 +107,8 @@ export class PipelineStack extends cdk.Stack {
               {
                 repositoryUri: this.ecrRepo.repositoryUri,
                 containerName: "",
-              }
+              },
+              2
             ),
           ],
         },
