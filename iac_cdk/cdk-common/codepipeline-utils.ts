@@ -50,7 +50,7 @@ export const createDockerBuildAction = (
       buildImage: codebuild.LinuxBuildImage.AMAZON_LINUX_2_3,
       privileged: true,
     },
-    buildSpec: createBuildSpecFromFile("./buildspec.yml"),
+    buildSpec: createBuildSpecFromFile("./iac_cdk/buildspec.yml"),
     environmentVariables: {
       REPOSITORY_URI: { value: props.repositoryUri },
       CONTAINER_NAME: { value: props.containerName },
@@ -90,9 +90,10 @@ export const createCdkBuildAction = (
   input: codepipeline.Artifact,
   output: codepipeline.Artifact,
   role: iam.IRole,
-  runOrder: number = 1
+  runOrder: number,
+  cdkFolder: string
 ): codepipeline_actions.CodeBuildAction => {
-  const project = createCdkBuildProject(scope, "CdkBuildProject");
+  const project = createCdkBuildProject(scope, "CdkBuildProject", cdkFolder);
   // Add additional permissions to role
   project.role?.addToPrincipalPolicy(
     new iam.PolicyStatement({

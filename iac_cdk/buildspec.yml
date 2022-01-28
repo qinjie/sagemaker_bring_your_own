@@ -5,7 +5,7 @@ phases:
   pre_build:
     commands:
       # Move to application source folder
-      - cd sagemaker_container
+      - cd ../sagemaker_container
       - aws --version
       - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)

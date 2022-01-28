@@ -4,6 +4,7 @@ import * as iam from "@aws-cdk/aws-iam";
 import * as kms from "@aws-cdk/aws-kms";
 import * as s3 from "@aws-cdk/aws-s3";
 import * as cdk from "@aws-cdk/core";
+import { runMain } from "module";
 import {
   createCdkBuildAction,
   createCfnDeployAction,
@@ -95,7 +96,9 @@ export class PipelineStack extends cdk.Stack {
               this,
               sourceOutput,
               cdkBuildOutput,
-              pipelineRole
+              pipelineRole,
+              1,
+              "iac_cdk"
             ),
             createDockerBuildAction(
               this,

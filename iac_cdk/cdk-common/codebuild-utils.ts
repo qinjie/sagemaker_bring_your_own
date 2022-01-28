@@ -8,7 +8,11 @@ import { IBaseService, IService } from "@aws-cdk/aws-ecs";
 Functions which creates BuildProject for Actions in CodePipeline
 */
 
-export const createCdkBuildProject = (scope: cdk.Construct, id: string) =>
+export const createCdkBuildProject = (
+  scope: cdk.Construct,
+  id: string,
+  cdkFolder: string
+) =>
   new codebuild.PipelineProject(scope, `${id}`, {
     environment: {
       buildImage: codebuild.LinuxBuildImage.STANDARD_5_0,
@@ -18,7 +22,7 @@ export const createCdkBuildProject = (scope: cdk.Construct, id: string) =>
       version: "0.2",
       phases: {
         install: {
-          commands: "npm install",
+          commands: [`cd ${cdkFolder}`, "npm install"],
         },
         build: {
           commands: ["npm run build", "npm run cdk synth -- -v -o dist"],
