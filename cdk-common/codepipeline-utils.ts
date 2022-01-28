@@ -1,30 +1,56 @@
 import * as codebuild from "@aws-cdk/aws-codebuild";
 import * as cdk from "@aws-cdk/core";
+import * as codecommit from "@aws-cdk/aws-codecommit";
 import * as codepipeline from "@aws-cdk/aws-codepipeline";
 import * as codepipeline_actions from "@aws-cdk/aws-codepipeline-actions";
 import * as iam from "@aws-cdk/aws-iam";
 import { createCdkBuildProject } from "../cdk-common/codebuild-utils";
-import { Effect } from "@aws-cdk/aws-iam";
+import { Construct } from "@aws-cdk/core";
 
 /*
 Functions which creates Action for CodePipeline
 */
 
-export const createSourceAction = (
+export const createCodeCommitSourceAction = (
+  scope: Construct,
   output: codepipeline.Artifact,
-  props: {
-    code_repo_name: string;
-    code_repo_branch: string;
-    code_repo_owner?: string;
-    code_repo_secret_var?: string;
+  code_repo: {
+    name: string;
+    branch: string;
+  },
+  role: iam.IRole
+): codepipeline_actions.CodeCommitSourceAction => {
+  const sourceAction = new codepipeline_actions.CodeCommitSourceAction({
+    actionName: "CodeCommit_Source",
+    repository: codecommit.Repository.fromRepositoryName(
+      scope,
+      "CodeRepo",
+      code_repo.name
+    ),
+    branch: code_repo.branch,
+    output: output,
+    role: role,
+  });
+  return sourceAction;
+};
+
+export const createGithubSourceAction = (
+  output: codepipeline.Artifact,
+  code_repo_props: {
+    name: string;
+    branch: string;
+    owner?: string;
+    secret_var?: string;
   }
 ): codepipeline_actions.GitHubSourceAction => {
   const githubAction = new codepipeline_actions.GitHubSourceAction({
     actionName: "Github_Source",
-    repo: props.code_repo_name,
-    branch: props.code_repo_branch,
-    owner: props.code_repo_owner!,
-    oauthToken: cdk.SecretValue.secretsManager(props.code_repo_secret_var!),
+    repo: code_repo_props.code_repo_name,
+    branch: code_repo_props.code_repo_branch,
+    owner: code_repo_props.code_repo_owner!,
+    oauthToken: cdk.SecretValue.secretsManager(
+      code_repo_props.code_repo_secret_var!
+    ),
     output: output,
   });
   return githubAction;
@@ -39,10 +65,7 @@ export const createDockerBuildAction = (
   input: codepipeline.Artifact,
   output: codepipeline.Artifact,
   role: iam.IRole,
-  props: {
-    repositoryUri: string;
-    containerName: string;
-  },
+  props: { repositoryUri: string; containerName: string },
   runOrder: number = 1
 ): codepipeline_actions.CodeBuildAction => {
   const project = new codebuild.PipelineProject(scope, "CodeBuildProject", {
@@ -61,16 +84,6 @@ export const createDockerBuildAction = (
     iam.ManagedPolicy.fromAwsManagedPolicyName(
       "AmazonEC2ContainerRegistryPowerUser"
     )
-  );
-  project.role?.addManagedPolicy(
-    iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonS3ReadOnlyAccess")
-  );
-  project.role?.addToPrincipalPolicy(
-    new iam.PolicyStatement({
-      effect: Effect.ALLOW,
-      resources: ["*"],
-      actions: ["iam:PassRole"],
-    })
   );
 
   const buildAction = new codepipeline_actions.CodeBuildAction({
