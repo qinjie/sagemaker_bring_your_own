@@ -19,5 +19,11 @@
     "strictPropertyInitialization": false,
     "typeRoots": ["./node_modules/@types"]
   },
-  "exclude": ["node_modules", "cdk.out", "cdk.prod", "docs", "src"]
+  "exclude": [
+    "node_modules",
+    "cdk.out",
+    "cdk.prod",
+    "docs",
+    "sagemaker_container"
+  ]
 }
