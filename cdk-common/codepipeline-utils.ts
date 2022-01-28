@@ -37,7 +37,7 @@ export const createCodeCommitSourceAction = (
 export const createGithubSourceAction = (
   output: codepipeline.Artifact,
   code_repo_props: {
-    name: string;
+    repo: string;
     branch: string;
     owner?: string;
     secret_var?: string;
@@ -45,12 +45,10 @@ export const createGithubSourceAction = (
 ): codepipeline_actions.GitHubSourceAction => {
   const githubAction = new codepipeline_actions.GitHubSourceAction({
     actionName: "Github_Source",
-    repo: code_repo_props.code_repo_name,
-    branch: code_repo_props.code_repo_branch,
-    owner: code_repo_props.code_repo_owner!,
-    oauthToken: cdk.SecretValue.secretsManager(
-      code_repo_props.code_repo_secret_var!
-    ),
+    repo: code_repo_props.repo,
+    branch: code_repo_props.branch,
+    owner: code_repo_props.owner!,
+    oauthToken: cdk.SecretValue.secretsManager(code_repo_props.secret_var!),
     output: output,
   });
   return githubAction;
