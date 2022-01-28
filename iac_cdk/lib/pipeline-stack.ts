@@ -24,6 +24,9 @@ export interface PipelineStackProps extends cdk.StackProps {
   code_repo_owner?: string;
 }
 
+const IAC_CDK_FOLDER = "iac_cdk";
+const BUILDSPEC_FILE = "sagemaker_container/buildspec.yml";
+
 export class PipelineStack extends cdk.Stack {
   private project_code: string;
   private pipeline: codepipeline.Pipeline;
@@ -97,7 +100,7 @@ export class PipelineStack extends cdk.Stack {
               cdkBuildOutput,
               pipelineRole,
               1,
-              "iac_cdk"
+              IAC_CDK_FOLDER
             ),
             createDockerBuildAction(
               this,
@@ -108,7 +111,8 @@ export class PipelineStack extends cdk.Stack {
                 repositoryUri: this.ecrRepo.repositoryUri,
                 containerName: "",
               },
-              2
+              2,
+              BUILDSPEC_FILE
             ),
           ],
         },

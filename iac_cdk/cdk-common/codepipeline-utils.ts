@@ -43,14 +43,15 @@ export const createDockerBuildAction = (
     repositoryUri: string;
     containerName: string;
   },
-  runOrder: number = 1
+  runOrder: number = 1,
+  buildspecFile: string
 ): codepipeline_actions.CodeBuildAction => {
   const project = new codebuild.PipelineProject(scope, "CodeBuildProject", {
     environment: {
       buildImage: codebuild.LinuxBuildImage.AMAZON_LINUX_2_3,
       privileged: true,
     },
-    buildSpec: createBuildSpecFromFile("./iac_cdk/buildspec.yml"),
+    buildSpec: createBuildSpecFromFile(buildspecFile),
     environmentVariables: {
       REPOSITORY_URI: { value: props.repositoryUri },
       CONTAINER_NAME: { value: props.containerName },
