@@ -1,5 +1,5 @@
 {
-  "name": "sgsearch-content-type-prediction",
+  "name": "sagemaker-bring-your-own",
   "version": "0.1.0",
   "bin": {
     "temp": "bin/main.js"
