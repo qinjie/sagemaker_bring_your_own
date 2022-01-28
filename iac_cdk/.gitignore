@@ -9,6 +9,7 @@ node_modules
 .cdk.staging
 /cdk.out/*
 # !/cdk.out/*.template.json
+dist
 
 # misc
 .DS_Store

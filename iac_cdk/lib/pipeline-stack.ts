@@ -10,6 +10,7 @@ import {
   createDockerBuildAction,
   createSourceAction,
 } from "../cdk-common/codepipeline-utils";
+import { BUILDSPEC_FILE, IAC_CDK_FOLDER } from "./config";
 
 export interface PipelineStackProps extends cdk.StackProps {
   // basic props for cdk
@@ -23,9 +24,6 @@ export interface PipelineStackProps extends cdk.StackProps {
   code_repo_secret_var?: string;
   code_repo_owner?: string;
 }
-
-const IAC_CDK_FOLDER = "iac_cdk";
-const BUILDSPEC_FILE = "sagemaker_container/buildspec.yml";
 
 export class PipelineStack extends cdk.Stack {
   private project_code: string;
