@@ -24,15 +24,6 @@ const props = {
   }.amazonaws.com/aws-cdk/${process.env.PROJECT_CODE!}`,
   // basic props
   project_code: process.env.PROJECT_CODE!,
-  // code repo
-  code_repo_name: process.env.CODE_REPO_NAME!,
-  code_repo_branch: process.env.CODE_REPO_BRANCH!,
-  code_repo_owner: process.env.CODE_REPO_OWNER!,
-  code_repo_secret_var: process.env.CODE_REPO_SECRET_VAR!,
-  // cdk supporting resources
-  codepipeline_role_arn: process.env.AWS_CODEPIPELINE_ROLE_ARN!,
-  cloudformation_role_arn: process.env.AWS_CLOUDFORMATION_ROLE_ARN!,
-  artifact_bucket_name: process.env.AWS_ARTIFACT_BUCKET_NAME!,
 };
 
 const project_code = process.env.PROJECT_CODE!;

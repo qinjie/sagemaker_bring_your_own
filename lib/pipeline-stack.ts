@@ -11,30 +11,29 @@ import {
   createSourceAction,
 } from "../cdk-common/codepipeline-utils";
 
-export interface PipelineStackProps extends cdk.StackProps {
-  // basic props for cdk
-  project_code: string;
-  codepipeline_role_arn: string;
-  cloudformation_role_arn: string;
-  artifact_bucket_name: string;
-  // code repo
-  code_repo_name: string;
-  code_repo_branch: string;
-  code_repo_secret_var?: string;
-  code_repo_owner?: string;
-}
+// cdk supporting resources
+const AWS_CODEPIPELINE_ROLE_ARN = process.env.AWS_CODEPIPELINE_ROLE_ARN!;
+const AWS_CLOUDFORMATION_ROLE_ARN = process.env.AWS_CLOUDFORMATION_ROLE_ARN!;
+const AWS_ARTIFACT_BUCKET_NAME = process.env.AWS_ARTIFACT_BUCKET_NAME!;
+const PROJECT_CODE = process.env.PROJECT_CODE!;
+
+// code repo
+const code_repo = {
+  code_repo_name: process.env.CODE_REPO_NAME!,
+  code_repo_branch: process.env.CODE_REPO_BRANCH!,
+  code_repo_owner: process.env.CODE_REPO_OWNER!,
+  code_repo_secret_var: process.env.CODE_REPO_SECRET_VAR!,
+};
 
 export class PipelineStack extends cdk.Stack {
-  private project_code: string;
   private pipeline: codepipeline.Pipeline;
   private ecrRepo: ecr.IRepository;
   private key: kms.Key;
 
-  constructor(scope: cdk.Construct, id: string, props: PipelineStackProps) {
+  constructor(scope: cdk.Construct, id: string, props: cdk.StackProps) {
     super(scope, id, props);
 
-    this.project_code = props.project_code;
-    this.ecrRepo = this.createEcrRepo(this, props.project_code);
+    this.ecrRepo = this.createEcrRepo(this, PROJECT_CODE);
     this.pipeline = this.createPipeline(this, props);
     this.output();
   }
@@ -57,7 +56,7 @@ export class PipelineStack extends cdk.Stack {
 
   private createPipeline(
     scope: cdk.Stack,
-    props: PipelineStackProps
+    props: cdk.StackProps
   ): codepipeline.Pipeline {
     const sourceOutput = new codepipeline.Artifact();
     const cdkBuildOutput = new codepipeline.Artifact();
@@ -67,26 +66,29 @@ export class PipelineStack extends cdk.Stack {
     const pipelineRole = iam.Role.fromRoleArn(
       scope,
       "CodePipelineRole",
-      props.codepipeline_role_arn!
+      AWS_CODEPIPELINE_ROLE_ARN
     );
 
     const cloudFormationRole = iam.Role.fromRoleArn(
       scope,
       "CloudFormationRole",
-      props.cloudformation_role_arn!
+      AWS_CLOUDFORMATION_ROLE_ARN
     );
 
-    const artifactBucket = this.getArtifactBucket({ ...props });
+    const artifactBucket = this.getArtifactBucket({
+      project_code: PROJECT_CODE,
+      artifact_bucket_name: AWS_ARTIFACT_BUCKET_NAME,
+    });
 
     /* Create codepipeline */
-    return new codepipeline.Pipeline(scope, `${props.project_code}-pipeline`, {
+    return new codepipeline.Pipeline(scope, `${PROJECT_CODE}-pipeline`, {
       artifactBucket,
       role: pipelineRole,
-      pipelineName: props.project_code,
+      pipelineName: PROJECT_CODE,
       stages: [
         {
           stageName: "Source",
-          actions: [createSourceAction(sourceOutput, { ...props })],
+          actions: [createSourceAction(sourceOutput, code_repo)],
         },
         {
           stageName: "Build",
@@ -144,15 +146,15 @@ export class PipelineStack extends cdk.Stack {
   private output() {
     new cdk.CfnOutput(this, "BucketKmsKeyArn", {
       value: this.key.keyArn,
-      exportName: `${this.project_code}-BucketKmsKeyArn`,
+      exportName: `${PROJECT_CODE}-BucketKmsKeyArn`,
     });
     new cdk.CfnOutput(this, "EcrRepositoryName", {
       value: this.ecrRepo.repositoryName,
-      exportName: `${this.project_code}-EcrRepositoryName`,
+      exportName: `${PROJECT_CODE}-EcrRepositoryName`,
     });
     new cdk.CfnOutput(this, "PipelineName", {
       value: this.pipeline.pipelineName,
-      exportName: `${this.project_code}-PipelineName`,
+      exportName: `${PROJECT_CODE}-PipelineName`,
     });
   }
 }
