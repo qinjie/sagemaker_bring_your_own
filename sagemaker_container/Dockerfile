@@ -33,3 +33,5 @@ ENV PATH="/opt/program:${PATH}"
 # Copy content in /app folder into /opt/program
 COPY app /opt/program
 WORKDIR /opt/program
+RUN chmod +x train
+RUN chmod +x serve
