@@ -1,0 +1,213 @@
+{
+  "Comment": "An example to train and host SageMaker model.",
+  "StartAt": "Train Model",
+  "States": {
+    "Train Model": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sagemaker:createTrainingJob.sync",
+      "Parameters": {
+        "TrainingJobName.$": "States.Format('{}-{}', $.ModelPrefix, $$.Execution.Name)",
+        "AlgorithmSpecification": {
+          "TrainingImage.$": "$.TrainingImage",
+          "TrainingInputMode": "File"
+        },
+        "HyperParameters": {},
+        "InputDataConfig": [
+          {
+            "ChannelName": "training",
+            "ContentType": "text/csv",
+            "DataSource": {
+              "S3DataSource": {
+                "S3DataType": "S3Prefix",
+                "S3Uri.$": "$.S3UriTraining",
+                "S3DataDistributionType": "FullyReplicated"
+              }
+            }
+          }
+        ],
+        "OutputDataConfig": {
+          "S3OutputPath.$": "$.S3OutputPath"
+        },
+        "ResourceConfig": {
+          "InstanceCount": 1,
+          "InstanceType": "ml.c4.2xlarge",
+          "VolumeSizeInGB": 10
+        },
+        "RoleArn.$": "$.TrainingRoleArn",
+        "StoppingCondition": {
+          "MaxRuntimeInSeconds": 172800
+        }
+      },
+      "ResultPath": "$.resultTrainModel",
+      "Next": "Create Model",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "SageMaker.AmazonSageMakerException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 1,
+          "BackoffRate": 1.1
+        },
+        {
+          "ErrorEquals": [
+            "SageMaker.ResourceLimitExceededException"
+          ],
+          "IntervalSeconds": 60,
+          "MaxAttempts": 1,
+          "BackoffRate": 1
+        },
+        {
+          "ErrorEquals": [
+            "States.Timeout"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 1,
+          "BackoffRate": 1
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.taskerror",
+          "Next": "Notify Failure"
+        }
+      ]
+    },
+    "Create Model": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sagemaker:createModel",
+      "Parameters": {
+        "PrimaryContainer": {
+          "Image.$": "$.TrainingImage",
+          "Environment": {},
+          "ModelDataUrl.$": "$.resultTrainModel.ModelArtifacts.S3ModelArtifacts"
+        },
+        "ExecutionRoleArn.$": "$.ExecutionRoleArn",
+        "ModelName.$": "$.resultTrainModel.TrainingJobName"
+      },
+      "ResultPath": "$.resultCreateModel",
+      "Next": "Create Endpoint Config",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.taskerror",
+          "Next": "Notify Failure"
+        }
+      ]
+    },
+    "Create Endpoint Config": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sagemaker:createEndpointConfig",
+      "Parameters": {
+        "EndpointConfigName.$": "$.resultTrainModel.TrainingJobName",
+        "ProductionVariants": [
+          {
+            "InitialInstanceCount": 1,
+            "InitialVariantWeight": 1,
+            "InstanceType": "ml.t2.medium",
+            "ModelName.$": "$.resultTrainModel.TrainingJobName",
+            "VariantName": "AllTraffic"
+          }
+        ]
+      },
+      "ResultPath": "$.resultCreateEndpointConfig",
+      "Next": "Create Or Update Endpoint",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.taskerror",
+          "Next": "Notify Failure"
+        }
+      ]
+    },
+    "Create Or Update Endpoint": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.ToUpdateEndpoint",
+          "BooleanEquals": false,
+          "Next": "Create Endpoint"
+        },
+        {
+          "Variable": "$.ToUpdateEndpoint",
+          "BooleanEquals": true,
+          "Next": "Update Endpoint"
+        }
+      ],
+      "Default": "Create Endpoint"
+    },
+    "Update Endpoint": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sagemaker:updateEndpoint",
+      "Parameters": {
+        "EndpointConfigName.$": "$.resultTrainModel.TrainingJobName",
+        "EndpointName.$": "$.ModelPrefix"
+      },
+      "Next": "Notify Success",
+      "ResultPath": "$.resultEndpoint",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.taskerror",
+          "Next": "Notify Failure"
+        }
+      ]
+    },
+    "Create Endpoint": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sagemaker:createEndpoint",
+      "Parameters": {
+        "EndpointConfigName.$": "$.resultTrainModel.TrainingJobName",
+        "EndpointName.$": "$.ModelPrefix"
+      },
+      "Next": "Notify Success",
+      "ResultPath": "$.resultEndpoint",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.taskerror",
+          "Next": "Notify Failure"
+        }
+      ]
+    },
+    "Notify Success": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "Subject": "[SUCCEED] SageMaker Model Training and Deployment",
+        "Message": "Completed train and deploy SageMaker model",
+        "TopicArn.$": "$.SNSTopicArn",
+        "MessageAttributes": {}
+      },
+      "Next": "Succeed"
+    },
+    "Notify Failure": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "Subject": "[FAIL] SageMaker Model Training and Deployment",
+        "Message.$": "States.Format('Failed to train and deploy SageMaker model. {}: {}', $.taskerror.Error, $.taskerror.Cause)",
+        "TopicArn.$": "$.SNSTopicArn",
+        "MessageAttributes": {}
+      },
+      "Next": "Fail"
+    },
+    "Fail": {
+      "Type": "Fail"
+    },
+    "Succeed": {
+      "Type": "Succeed"
+    }
+  }
+}
