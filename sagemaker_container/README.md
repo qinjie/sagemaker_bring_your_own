@@ -57,7 +57,7 @@ Following files may need to be updated for your own algorithm.
 
 
 
-## Testing
+## Local Testing
 
 We can perform tests in local machine before test it in SageMaker. The `test` folder contains scripts and dummy data for testing. 
 
@@ -133,12 +133,17 @@ Once we confirm that the code works fine, we can run the bash test files directl
 
 
 
+## Testing in SageMaker
+
+Refer to `sgsearch-content-classification.ipynb` for instructions. 
+
+
+
 ## Others
 
 ### Environment Variables
 
-When you create an inference server, you can control some of Gunicorn's options via environment variables. These
-can be supplied as part of the CreateModel API call.
+When you create an inference server, you can control some of Gunicorn's options via environment variables. These can be supplied as part of the CreateModel API call.
 
     Parameter                Environment Variable              Default Value
     ---------                --------------------              -------------

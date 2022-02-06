@@ -43,7 +43,7 @@ export const createDockerBuildAction = (
     repositoryUri: string;
     containerName: string;
   },
-  runOrder: number = 1,
+  runOrder: number,
   buildspecFile: string
 ): codepipeline_actions.CodeBuildAction => {
   const project = new codebuild.PipelineProject(scope, "CodeBuildProject", {
