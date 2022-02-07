@@ -1,9 +1,11 @@
 import * as codepipeline from "@aws-cdk/aws-codepipeline";
+import * as codepipeline_actions from "@aws-cdk/aws-codepipeline-actions";
 import * as ecr from "@aws-cdk/aws-ecr";
 import * as iam from "@aws-cdk/aws-iam";
 import * as kms from "@aws-cdk/aws-kms";
 import * as s3 from "@aws-cdk/aws-s3";
 import * as cdk from "@aws-cdk/core";
+import * as lambda from "@aws-cdk/aws-lambda";
 import {
   createCdkBuildAction,
   createCfnDeployAction,
@@ -27,6 +29,8 @@ export interface PipelineStackProps extends cdk.StackProps {
   code_repo_branch: string;
   code_repo_secret_var?: string;
   code_repo_owner?: string;
+  // application props
+  lambda_code: lambda.CfnParametersCode;
 }
 
 export class PipelineStack extends cdk.Stack {
@@ -142,13 +146,22 @@ export class PipelineStack extends cdk.Stack {
               [],
               1
             ),
-            createCfnDeployAction(
-              lambdaBuildOutput,
-              `${props.project_code}-lambda`,
-              cloudFormationRole,
-              [],
-              2
-            ),
+            new codepipeline_actions.CloudFormationCreateUpdateStackAction({
+              actionName: "Deploy",
+              templatePath: cdkBuildOutput.atPath(
+                // Must be the same name as LambdaStack
+                `${props.project_code}-lambda.template.json`
+              ),
+              stackName: `${props.project_code}-lambda`,
+              adminPermissions: true,
+              parameterOverrides: {
+                // Pass location of lambda code to Lambda Stack
+                ...props.lambda_code.assign(lambdaBuildOutput.s3Location),
+              },
+              extraInputs: [lambdaBuildOutput],
+              deploymentRole: cloudFormationRole,
+              runOrder: 2,
+            }),
           ],
         },
       ],

@@ -63,6 +63,7 @@ const lambdaStack = new LambdaStack(app, lambda_name, {
 /* Pipeline Stack */
 const pipelineStack = new PipelineStack(app, `${props.project_code}`, {
   ...props,
+  lambda_code: lambdaStack.lambdaCode,
   env: env,
   tags: tags,
 });

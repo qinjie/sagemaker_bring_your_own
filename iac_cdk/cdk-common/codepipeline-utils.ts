@@ -164,15 +164,7 @@ export const createCfnDeployAction = (
       `${stackName}.template.json`
     ),
     adminPermissions: true,
-    parameterOverrides: {
-      // Pass location of lambda code to Lambda Stack
-      // ...props.lambda_code.assign(
-      //   dockerBuildOutput.getParam(
-      //     "imagedefinitions.json",
-      //     "imagedefinitions"
-      //   )
-      // ),
-    },
+    parameterOverrides: {},
     extraInputs: extraInputs,
     deploymentRole: cloudformationRole,
     runOrder: runOrder,
