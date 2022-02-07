@@ -32,9 +32,12 @@
     "@aws-cdk/aws-iam": "1.133.0",
     "@aws-cdk/aws-kms": "1.133.0",
     "@aws-cdk/aws-s3": "1.133.0",
+    "@aws-cdk/aws-stepfunctions": "^1.133.0",
+    "@aws-cdk/aws-stepfunctions-tasks": "^1.133.0",
     "@aws-cdk/core": "1.133.0",
     "cdk-ecr-deployment": "^0.0.74",
     "dotenv": "^10.0.0",
+    "fs": "0.0.1-security",
     "source-map-support": "^0.5.16"
   }
 }

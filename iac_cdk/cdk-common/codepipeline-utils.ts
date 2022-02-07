@@ -134,7 +134,7 @@ export const createCfnDeployAction = (
     // Must be the same as the other stack name, e.g. `${props.project_code}-fargate`
     stackName: stackName,
     templatePath: cdkBuildOutput.atPath(
-      // Must be the same name as LambdaStack, e.g. `${stackName}.template.json`
+      // Must be the same name as the Stack, e.g. `${stackName}.template.json`
       `${stackName}.template.json`
     ),
     adminPermissions: true,

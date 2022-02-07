@@ -11,12 +11,15 @@ import {
   createSourceAction,
 } from "../cdk-common/codepipeline-utils";
 import { BUILDSPEC_FILE, IAC_CDK_FOLDER } from "./config";
+import * as fs from "fs";
+import * as stepfunctions from "@aws-cdk/aws-stepfunctions";
 
 export interface PipelineStackProps extends cdk.StackProps {
   // basic props for cdk
   project_code: string;
   codepipeline_role_arn: string;
   cloudformation_role_arn: string;
+  stepfunctions_role_arn: string;
   artifact_bucket_name: string;
   // code repo
   code_repo_name: string;
@@ -79,6 +82,11 @@ export class PipelineStack extends cdk.Stack {
 
     const artifactBucket = this.getArtifactBucket({ ...props });
 
+    const stepFunction = this.createStepFunction({
+      stepfunction_name: props.project_code,
+      stepfunctions_role_arn: props.stepfunctions_role_arn,
+    });
+
     /* Create codepipeline */
     return new codepipeline.Pipeline(scope, `${props.project_code}-pipeline`, {
       artifactBucket,
@@ -114,18 +122,16 @@ export class PipelineStack extends cdk.Stack {
             ),
           ],
         },
-        // {
-        //   stageName: "Deploy",
-        //   actions: [
-        //     createCfnDeployAction(
-        //       cdkBuildOutput,
-        //       `${props.project_code}-deployment`,
-        //       cloudFormationRole,
-        //       [],
-        //       2
-        //     ),
-        //   ],
-        // },
+        {
+          stageName: "Deploy",
+          actions: [
+            createCfnDeployAction(
+              cdkBuildOutput,
+              `${props.project_code}`,
+              cloudFormationRole
+            ),
+          ],
+        },
       ],
     });
   }
@@ -144,6 +150,25 @@ export class PipelineStack extends cdk.Stack {
       bucketName: props.artifact_bucket_name,
       encryptionKey: this.key,
     });
+  }
+
+  private createStepFunction(props: {
+    stepfunction_name: string;
+    stepfunctions_role_arn: string;
+  }) {
+    const file = fs.readFileSync("../step_functions/definition.asl.json");
+
+    const stepFunction = new stepfunctions.CfnStateMachine(
+      this,
+      "cfnStepFunction",
+      {
+        roleArn: props.stepfunctions_role_arn,
+        definitionString: file.toString(),
+        stateMachineName: props.stepfunction_name,
+      }
+    );
+
+    return stepFunction;
   }
 
   private output() {

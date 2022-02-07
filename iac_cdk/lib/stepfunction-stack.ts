@@ -10,7 +10,10 @@ import {
 } from "../cdk-common/codepipeline-utils";
 import { BUILDSPEC_FILE } from "./config";
 
-export interface DeploymentStackProps extends cdk.StackProps {
+// Load .env file and construct tags
+require("dotenv").config();
+
+export interface StepFunctionStackProps extends cdk.StackProps {
   // basic props for cdk
   project_code: string;
   codepipeline_role_arn?: string;
@@ -23,14 +26,14 @@ export interface DeploymentStackProps extends cdk.StackProps {
   code_repo_owner?: string;
 }
 
-export class DeploymentStack extends cdk.Stack {
+export class StepFunctionStack extends cdk.Stack {
   readonly project_code: string;
   public readonly pipeline: codepipeline.Pipeline;
   public readonly ecrRepo: ecr.IRepository;
 
   containerName: string;
 
-  constructor(scope: cdk.Construct, id: string, props: DeploymentStackProps) {
+  constructor(scope: cdk.Construct, id: string, props: StepFunctionStackProps) {
     super(scope, id, props);
 
     this.project_code = props.project_code;
@@ -48,7 +51,7 @@ export class DeploymentStack extends cdk.Stack {
 
   private createPipeline(
     scope: cdk.Stack,
-    props: DeploymentStackProps
+    props: StepFunctionStackProps
   ): codepipeline.Pipeline {
     const sourceOutput = new codepipeline.Artifact();
     const dockerBuildOutput = new codepipeline.Artifact();
@@ -73,23 +76,23 @@ export class DeploymentStack extends cdk.Stack {
           stageName: "Source",
           actions: [createSourceAction(sourceOutput, { ...props })],
         },
-        {
-          stageName: "Build",
-          actions: [
-            createDockerBuildAction(
-              this,
-              sourceOutput,
-              dockerBuildOutput,
-              pipelineRole,
-              {
-                repositoryUri: this.ecrRepo.repositoryUri,
-                containerName: this.containerName,
-              },
-              2,
-              BUILDSPEC_FILE
-            ),
-          ],
-        },
+        // {
+        //   stageName: "Build",
+        //   actions: [
+        //     createDockerBuildAction(
+        //       this,
+        //       sourceOutput,
+        //       dockerBuildOutput,
+        //       pipelineRole,
+        //       {
+        //         repositoryUri: this.ecrRepo.repositoryUri,
+        //         containerName: this.containerName,
+        //       },
+        //       2,
+        //       BUILDSPEC_FILE
+        //     ),
+        //   ],
+        // },
         // {
         //   stageName: "Deploy",
         //   actions: [
