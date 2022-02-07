@@ -1,3 +1,4 @@
+from io import StringIO
 import json
 import logging
 import os
@@ -10,7 +11,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import LOCAL_FOLDER
 
-logger = logging.getLogger()
+logger = logging.getLogger('sagemaker_api')
 logger.setLevel(logging.INFO)
 
 router = APIRouter()
@@ -36,20 +37,20 @@ def save_file_to_local(file_name, file):
         logger.exception(e)
 
 
-@router.get('/predict_csv_file')
+@router.post('/predict_csv_file')
 async def predict_csv_file(request: Request, file_obj: UploadFile = File(...)):
     """
     Upload a CSV file and invoke SageMaker endpoint for scoring.
     """
-    logger.info('Upload Mail Config CSV: ', {
-        'filename': file_obj.filename, 'content-type': file_obj.content_type})
-    object_name = file_obj.filename
-    local_path = save_file_to_local(object_name, file_obj.file)
-    if not local_path:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail="Failed to save uploaded file.")
+    logger.info(
+        f'filename: {file_obj.filename}, content-type: {file_obj.content_type}')
+    # local_path = save_file_to_local(file_obj.filename, file_obj.file)
+    # if not local_path:
+    #     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #                         detail="Failed to save uploaded file.")
 
-    payload = file_obj.read()
+    payload = StringIO(str(file_obj.file.read()))
+    logger.info(f'Payload: {payload}')
     response = runtime.invoke_endpoint(EndpointName=SAGEMAKER_ENDPOINT,
                                        ContentType='text/csv',
                                        Body=payload)
