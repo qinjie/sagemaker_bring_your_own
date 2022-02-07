@@ -280,11 +280,21 @@ Add retry in the training job. If it still fails, send a notification through SN
 
 ## Use Input Parameters
 
+Refer to `step_functions/input.json`.
 
-
-
-
-## Train Multiple Models
+```json
+{
+  "ModelPrefix": "sagemaker-bring-your-own",
+  "TrainingImage": "305326993135.dkr.ecr.ap-southeast-1.amazonaws.com/sagemaker-bring-your-own",
+  "S3UriTraining": "s3://temp-305326993135/sagemaker_bring_your_own/input/data/training",
+  "S3OutputPath": "s3://temp-305326993135/sagemaker_bring_your_own/output/models",
+  "TrainingRoleArn": "arn:aws:iam::305326993135:role/u-SageMakerExecutionRole",
+  "ExecutionRoleArn": "arn:aws:iam::305326993135:role/u-SageMakerExecutionRole",
+  "SNSTopicArn": "arn:aws:sns:ap-southeast-1:305326993135:whitespace_alerts",
+  "ToUpdateEndpoint": true,
+  "DataType": "text/csv"
+}
+```
 
 
 
@@ -292,3 +302,6 @@ Add retry in the training job. If it still fails, send a notification through SN
 
 ## Training + Hosting Task
 
+Refer to `step_functions/definition.asl.json`.
+
+![image-20220206171943582](https://raw.githubusercontent.com/qinjie/picgo-images/main/image-20220206171943582.png)

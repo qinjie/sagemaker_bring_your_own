@@ -6,5 +6,6 @@
   "TrainingRoleArn": "arn:aws:iam::305326993135:role/u-SageMakerExecutionRole",
   "ExecutionRoleArn": "arn:aws:iam::305326993135:role/u-SageMakerExecutionRole",
   "SNSTopicArn": "arn:aws:sns:ap-southeast-1:305326993135:whitespace_alerts",
-  "ToUpdateEndpoint": true
+  "ToUpdateEndpoint": true,
+  "DataType": "text/csv"
 }
