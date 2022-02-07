@@ -139,15 +139,8 @@ export class PipelineStack extends cdk.Stack {
         {
           stageName: "Deploy",
           actions: [
-            createCfnDeployAction(
-              cdkBuildOutput,
-              `${props.project_code}`,
-              cloudFormationRole,
-              [],
-              1
-            ),
             new codepipeline_actions.CloudFormationCreateUpdateStackAction({
-              actionName: "Deploy",
+              actionName: "Deploy-lambda-function",
               templatePath: cdkBuildOutput.atPath(
                 // Must be the same name as LambdaStack
                 `${props.project_code}-lambda.template.json`
@@ -160,8 +153,15 @@ export class PipelineStack extends cdk.Stack {
               },
               extraInputs: [lambdaBuildOutput],
               deploymentRole: cloudFormationRole,
-              runOrder: 2,
+              runOrder: 1,
             }),
+            createCfnDeployAction(
+              cdkBuildOutput,
+              `${props.project_code}`,
+              cloudFormationRole,
+              [],
+              2
+            ),
           ],
         },
       ],
