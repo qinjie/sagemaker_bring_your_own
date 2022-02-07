@@ -11,7 +11,7 @@ import {
   createPythonLambdaBuildAction,
   createSourceAction,
 } from "../cdk-common/codepipeline-utils";
-import { BUILDSPEC_FILE, IAC_CDK_FOLDER } from "./config";
+import { BUILDSPEC_FILE, IAC_CDK_FOLDER, LAMBDA_FOLDER } from "./config";
 import * as fs from "fs";
 import * as stepfunctions from "@aws-cdk/aws-stepfunctions";
 
@@ -27,8 +27,6 @@ export interface PipelineStackProps extends cdk.StackProps {
   code_repo_branch: string;
   code_repo_secret_var?: string;
   code_repo_owner?: string;
-  // others
-  lambda_src_path: string;
 }
 
 export class PipelineStack extends cdk.Stack {
@@ -130,7 +128,7 @@ export class PipelineStack extends cdk.Stack {
               lambdaBuildOutput,
               pipelineRole,
               3,
-              props.lambda_src_path
+              LAMBDA_FOLDER
             ),
           ],
         },

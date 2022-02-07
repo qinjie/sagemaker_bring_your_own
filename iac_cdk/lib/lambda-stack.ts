@@ -14,6 +14,7 @@ import * as route53 from "@aws-cdk/aws-route53";
 import * as route53_targets from "@aws-cdk/aws-route53-targets";
 import * as cert_manager from "@aws-cdk/aws-certificatemanager";
 import { EnvVariablesType, loadEnv } from "../cdk-common/stack-utils";
+import { LAMBDA_FOLDER } from "./config";
 
 export interface LambdaStackProps extends cdk.StackProps {
   project_code: string;
@@ -22,7 +23,6 @@ export interface LambdaStackProps extends cdk.StackProps {
   // domain_name?: string;
   // hosted_zone_name?: string;
   // hosted_zone_id?: string;
-  lambda_src_path: string;
   sagemaker_endpoint: string;
 }
 
@@ -39,7 +39,7 @@ export class LambdaStack extends cdk.Stack {
 
     /* Load environment variables */
     let env_values = loadEnv(
-      path.join(__dirname, "..", props?.lambda_src_path!, ".env")
+      path.join(__dirname, "../..", LAMBDA_FOLDER, ".env")
     );
     env_values = {
       ...env_values,

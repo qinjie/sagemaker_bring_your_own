@@ -35,7 +35,6 @@ const props = {
   stepfunctions_role_arn: process.env.AWS_STEPFUNCTIONS_ROLE_ARN!,
   artifact_bucket_name: process.env.AWS_ARTIFACT_BUCKET_NAME!,
   // others
-  lambda_src_path: process.env.LAMBDA_SRC_PATH!,
   sagemaker_endpoint: process.env.SAGEMAKER_ENDPOINT!,
 };
 
@@ -53,7 +52,6 @@ const lambda_name = `${props.project_code}-lambda`;
 
 const lambdaProps: LambdaStackProps = {
   project_code: props.project_code,
-  lambda_src_path: props.lambda_src_path,
   sagemaker_endpoint: props.sagemaker_endpoint,
 };
 
