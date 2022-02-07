@@ -20,3 +20,4 @@ urllib3==1.26.5
 uvicorn[standard]
 watchgod==0.7
 websockets==8.1
+python-multipart==0.0.5
