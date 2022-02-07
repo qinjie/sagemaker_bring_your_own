@@ -3,7 +3,6 @@ import "source-map-support/register";
 import * as cdk from "@aws-cdk/core";
 import { PermissionsBoundary } from "../cdk-common/permission-boundary";
 import { PipelineStack } from "../lib/pipeline-stack";
-import { StepFunctionStack } from "../lib/stepfunction-stack";
 
 // Load .env file and construct tags
 require("dotenv").config();
@@ -52,25 +51,11 @@ const pipelineStack = new PipelineStack(app, `${project_code}`, {
   tags: tags,
 });
 
-// /* Create stacks */
-// const deploymentStack = new StepFunctionStack(
-//   app,
-//   `${project_code}-deployment`,
-//   {
-//     ...props,
-//     env: env,
-//     tags: tags,
-//   }
-// );
-
 /* Set permission boundary */
 if (AWS_POLICY_PERM_BOUNDARY) {
   cdk.Aspects.of(pipelineStack).add(
     new PermissionsBoundary(AWS_POLICY_PERM_BOUNDARY)
   );
-  // cdk.Aspects.of(deploymentStack).add(
-  //   new PermissionsBoundary(AWS_POLICY_PERM_BOUNDARY)
-  // );
 }
 
 app.synth;
