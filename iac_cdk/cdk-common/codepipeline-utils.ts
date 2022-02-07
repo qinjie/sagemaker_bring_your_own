@@ -3,7 +3,10 @@ import * as cdk from "@aws-cdk/core";
 import * as codepipeline from "@aws-cdk/aws-codepipeline";
 import * as codepipeline_actions from "@aws-cdk/aws-codepipeline-actions";
 import * as iam from "@aws-cdk/aws-iam";
-import { createCdkBuildProject } from "../cdk-common/codebuild-utils";
+import {
+  createCdkBuildProject,
+  createPythonLambdaBuildProject,
+} from "../cdk-common/codebuild-utils";
 import { Effect } from "@aws-cdk/aws-iam";
 
 /*
@@ -120,6 +123,29 @@ export const createCdkBuildAction = (
   });
 
   return buildAction;
+};
+
+export const createPythonLambdaBuildAction = (
+  scope: cdk.Construct,
+  input: codepipeline.Artifact,
+  output: codepipeline.Artifact,
+  role: iam.IRole,
+  runOrder: number,
+  lambdaFolder: string
+) => {
+  const srcBuildProject = createPythonLambdaBuildProject(
+    scope,
+    lambdaFolder,
+    "PythonLambdaBuildProject"
+  );
+  return new codepipeline_actions.CodeBuildAction({
+    actionName: "Lambda_Build",
+    project: srcBuildProject,
+    input: input,
+    outputs: [output],
+    role: role,
+    runOrder: runOrder,
+  });
 };
 
 export const createCfnDeployAction = (

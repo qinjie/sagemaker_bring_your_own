@@ -21,6 +21,8 @@
     "typescript": "~3.9.7"
   },
   "dependencies": {
+    "@aws-cdk/aws-apigatewayv2": "1.133.0",
+    "@aws-cdk/aws-apigatewayv2-integrations": "1.133.0",
     "@aws-cdk/aws-certificatemanager": "1.133.0",
     "@aws-cdk/aws-codebuild": "1.133.0",
     "@aws-cdk/aws-codecommit": "1.133.0",

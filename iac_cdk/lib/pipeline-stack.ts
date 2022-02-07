@@ -8,6 +8,7 @@ import {
   createCdkBuildAction,
   createCfnDeployAction,
   createDockerBuildAction,
+  createPythonLambdaBuildAction,
   createSourceAction,
 } from "../cdk-common/codepipeline-utils";
 import { BUILDSPEC_FILE, IAC_CDK_FOLDER } from "./config";
@@ -26,6 +27,8 @@ export interface PipelineStackProps extends cdk.StackProps {
   code_repo_branch: string;
   code_repo_secret_var?: string;
   code_repo_owner?: string;
+  // others
+  lambda_src_path: string;
 }
 
 export class PipelineStack extends cdk.Stack {
@@ -71,6 +74,7 @@ export class PipelineStack extends cdk.Stack {
     const sourceOutput = new codepipeline.Artifact();
     const cdkBuildOutput = new codepipeline.Artifact();
     const dockerBuildOutput = new codepipeline.Artifact();
+    const lambdaBuildOutput = new codepipeline.Artifact();
 
     /* Get existing resources for CDK */
     const pipelineRole = iam.Role.fromRoleArn(
@@ -120,6 +124,14 @@ export class PipelineStack extends cdk.Stack {
               2,
               BUILDSPEC_FILE
             ),
+            createPythonLambdaBuildAction(
+              this,
+              sourceOutput,
+              lambdaBuildOutput,
+              pipelineRole,
+              3,
+              props.lambda_src_path
+            ),
           ],
         },
         {
@@ -128,7 +140,16 @@ export class PipelineStack extends cdk.Stack {
             createCfnDeployAction(
               cdkBuildOutput,
               `${props.project_code}`,
-              cloudFormationRole
+              cloudFormationRole,
+              [],
+              1
+            ),
+            createCfnDeployAction(
+              lambdaBuildOutput,
+              `${props.project_code}-lambda`,
+              cloudFormationRole,
+              [],
+              2
             ),
           ],
         },

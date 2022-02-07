@@ -1,5 +1,9 @@
 import * as dotenv from "dotenv";
 
+export interface EnvVariablesType {
+  [key: string]: string;
+}
+
 export const loadEnv = (env_path: string) => {
   // Load .env into dictionary for lambda function
   console.log(env_path);
