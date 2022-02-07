@@ -32,6 +32,7 @@ export class PipelineStack extends cdk.Stack {
   private project_code: string;
   private pipeline: codepipeline.Pipeline;
   private ecrRepo: ecr.IRepository;
+  private stepFunction: stepfunctions.CfnStateMachine;
   private key: kms.Key;
 
   constructor(scope: cdk.Construct, id: string, props: PipelineStackProps) {
@@ -39,6 +40,10 @@ export class PipelineStack extends cdk.Stack {
 
     this.project_code = props.project_code;
     this.ecrRepo = this.createEcrRepo(this, props.project_code);
+    this.stepFunction = this.createStepFunction({
+      stepfunction_name: props.project_code,
+      stepfunctions_role_arn: props.stepfunctions_role_arn,
+    });
     this.pipeline = this.createPipeline(this, props);
     this.output();
   }
@@ -81,11 +86,6 @@ export class PipelineStack extends cdk.Stack {
     );
 
     const artifactBucket = this.getArtifactBucket({ ...props });
-
-    const stepFunction = this.createStepFunction({
-      stepfunction_name: props.project_code,
-      stepfunctions_role_arn: props.stepfunctions_role_arn,
-    });
 
     /* Create codepipeline */
     return new codepipeline.Pipeline(scope, `${props.project_code}-pipeline`, {
@@ -155,7 +155,7 @@ export class PipelineStack extends cdk.Stack {
   private createStepFunction(props: {
     stepfunction_name: string;
     stepfunctions_role_arn: string;
-  }) {
+  }): stepfunctions.CfnStateMachine {
     const file = fs.readFileSync("../step_functions/definition.asl.json");
 
     const stepFunction = new stepfunctions.CfnStateMachine(
