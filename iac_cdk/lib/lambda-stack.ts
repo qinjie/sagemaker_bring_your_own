@@ -94,13 +94,25 @@ export class LambdaStack extends cdk.Stack {
         ),
         iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonDynamoDBFullAccess"),
         iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonS3FullAccess"),
-        iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSESFullAccess"),
         iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSNSFullAccess"),
         iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSQSFullAccess"),
         iam.ManagedPolicy.fromAwsManagedPolicyName("AWSLambda_FullAccess"),
         iam.ManagedPolicy.fromAwsManagedPolicyName("SecretsManagerReadWrite"),
       ],
     });
+
+    // Add inline policy
+    lambdaARole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "sagemaker:InvokeEndpoint",
+        ],
+        resources: ["*"],
+        effect: iam.Effect.ALLOW,
+      })
+    );
 
     this.lambdaFunction = new lambda.Function(
       this,
