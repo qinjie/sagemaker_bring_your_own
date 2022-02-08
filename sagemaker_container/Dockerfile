@@ -1,7 +1,7 @@
 # Build an image that can do training and inference in SageMaker.
 # Uses the nginx, gunicorn, flask stack to serve inferences.
 
-FROM ubuntu:20.04
+FROM 305326993135.dkr.ecr.ap-southeast-1.amazonaws.com/ubuntu:20.04
 
 LABEL maintainer="DSAID CapDev <data@tech.gov.sg>"
 

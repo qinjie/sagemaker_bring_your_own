@@ -1,18 +1,23 @@
 import * as codepipeline from "@aws-cdk/aws-codepipeline";
+import * as codepipeline_actions from "@aws-cdk/aws-codepipeline-actions";
 import * as ecr from "@aws-cdk/aws-ecr";
 import * as iam from "@aws-cdk/aws-iam";
 import * as kms from "@aws-cdk/aws-kms";
 import * as s3 from "@aws-cdk/aws-s3";
 import * as cdk from "@aws-cdk/core";
+import * as lambda from "@aws-cdk/aws-lambda";
 import {
   createCdkBuildAction,
   createCfnDeployAction,
   createDockerBuildAction,
+  createPythonLambdaBuildAction,
   createSourceAction,
 } from "../cdk-common/codepipeline-utils";
-import { BUILDSPEC_FILE, IAC_CDK_FOLDER } from "./config";
+import { BUILDSPEC_FILE, IAC_CDK_FOLDER, LAMBDA_FOLDER } from "./config";
 import * as fs from "fs";
 import * as stepfunctions from "@aws-cdk/aws-stepfunctions";
+import * as codestar_noti from "@aws-cdk/aws-codestarnotifications";
+import * as sns from "@aws-cdk/aws-sns";
 
 export interface PipelineStackProps extends cdk.StackProps {
   // basic props for cdk
@@ -26,6 +31,9 @@ export interface PipelineStackProps extends cdk.StackProps {
   code_repo_branch: string;
   code_repo_secret_var?: string;
   code_repo_owner?: string;
+  sns_arn_for_developer: string;
+  // application props
+  lambda_code: lambda.CfnParametersCode;
 }
 
 export class PipelineStack extends cdk.Stack {
@@ -71,6 +79,7 @@ export class PipelineStack extends cdk.Stack {
     const sourceOutput = new codepipeline.Artifact();
     const cdkBuildOutput = new codepipeline.Artifact();
     const dockerBuildOutput = new codepipeline.Artifact();
+    const lambdaBuildOutput = new codepipeline.Artifact();
 
     /* Get existing resources for CDK */
     const pipelineRole = iam.Role.fromRoleArn(
@@ -88,52 +97,114 @@ export class PipelineStack extends cdk.Stack {
     const artifactBucket = this.getArtifactBucket({ ...props });
 
     /* Create codepipeline */
-    return new codepipeline.Pipeline(scope, `${props.project_code}-pipeline`, {
-      artifactBucket,
-      role: pipelineRole,
-      pipelineName: props.project_code,
-      stages: [
-        {
-          stageName: "Source",
-          actions: [createSourceAction(sourceOutput, { ...props })],
-        },
-        {
-          stageName: "Build",
-          actions: [
-            createCdkBuildAction(
-              this,
-              sourceOutput,
-              cdkBuildOutput,
-              pipelineRole,
-              1,
-              IAC_CDK_FOLDER
-            ),
-            createDockerBuildAction(
-              this,
-              sourceOutput,
-              dockerBuildOutput,
-              pipelineRole,
-              {
-                repositoryUri: this.ecrRepo.repositoryUri,
-                containerName: "",
-              },
-              2,
-              BUILDSPEC_FILE
-            ),
-          ],
-        },
-        {
-          stageName: "Deploy",
-          actions: [
-            createCfnDeployAction(
-              cdkBuildOutput,
-              `${props.project_code}`,
-              cloudFormationRole
-            ),
-          ],
-        },
+    const pipeline = new codepipeline.Pipeline(
+      scope,
+      `${props.project_code}-pipeline`,
+      {
+        artifactBucket,
+        role: pipelineRole,
+        pipelineName: props.project_code,
+        stages: [
+          {
+            stageName: "Source",
+            actions: [createSourceAction(sourceOutput, { ...props })],
+          },
+          {
+            stageName: "Build",
+            actions: [
+              createCdkBuildAction(
+                this,
+                sourceOutput,
+                cdkBuildOutput,
+                pipelineRole,
+                1,
+                IAC_CDK_FOLDER
+              ),
+              createDockerBuildAction(
+                this,
+                sourceOutput,
+                dockerBuildOutput,
+                pipelineRole,
+                {
+                  repositoryUri: this.ecrRepo.repositoryUri,
+                  containerName: "",
+                },
+                2,
+                BUILDSPEC_FILE
+              ),
+              createPythonLambdaBuildAction(
+                this,
+                sourceOutput,
+                lambdaBuildOutput,
+                pipelineRole,
+                3,
+                LAMBDA_FOLDER
+              ),
+            ],
+          },
+          {
+            stageName: "Deploy",
+            actions: [
+              new codepipeline_actions.CloudFormationCreateUpdateStackAction({
+                actionName: "Deploy-lambda-function",
+                templatePath: cdkBuildOutput.atPath(
+                  // Must be the same name as LambdaStack
+                  `${props.project_code}-lambda.template.json`
+                ),
+                stackName: `${props.project_code}-lambda`,
+                adminPermissions: true,
+                parameterOverrides: {
+                  // Pass location of lambda code to Lambda Stack
+                  ...props.lambda_code.assign(lambdaBuildOutput.s3Location),
+                },
+                extraInputs: [lambdaBuildOutput],
+                deploymentRole: cloudFormationRole,
+                runOrder: 1,
+              }),
+              createCfnDeployAction(
+                cdkBuildOutput,
+                `${props.project_code}`,
+                cloudFormationRole,
+                [],
+                2
+              ),
+            ],
+          },
+        ],
+      }
+    );
+
+    // Add notification to pipeline
+    const topicArn = props.sns_arn_for_developer;
+    const targetTopic = sns.Topic.fromTopicArn(
+      this,
+      "sns-notification-topic",
+      topicArn
+    );
+    targetTopic.addToResourcePolicy(
+      new iam.PolicyStatement({
+        sid: "AWSCodeStarNotifications_publish",
+        effect: iam.Effect.ALLOW,
+        principals: [
+          new iam.ServicePrincipal("codestar-notifications.amazonaws.com"),
+        ],
+        actions: ["SNS:Publish"],
+        resources: ["*"],
+      })
+    );
+    new codestar_noti.NotificationRule(this, "Notification", {
+      detailType: codestar_noti.DetailType.BASIC,
+      events: [
+        "codepipeline-pipeline-pipeline-execution-started",
+        "codepipeline-pipeline-pipeline-execution-failed",
+        "codepipeline-pipeline-pipeline-execution-succeeded",
+        "codepipeline-pipeline-pipeline-execution-canceled",
       ],
+      source: pipeline,
+      targets: [targetTopic],
     });
+
+    return pipeline;
   }
 
   private getArtifactBucket(props: {

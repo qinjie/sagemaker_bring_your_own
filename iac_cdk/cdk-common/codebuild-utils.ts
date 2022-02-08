@@ -36,11 +36,11 @@ export const createCdkBuildProject = (
   });
 
 export const createJavaScriptLambdaBuildProject = (
-  stack: cdk.Stack,
+  scope: cdk.Construct,
   lambdaFolder: string,
-  namePostfix: string = "LambdaBuild"
+  id: string = "JavaScriptLambdaBuildProject"
 ) =>
-  new codebuild.PipelineProject(stack, `${stack.stackName}-${namePostfix}`, {
+  new codebuild.PipelineProject(scope, `${id}`, {
     buildSpec: codebuild.BuildSpec.fromObject({
       version: "0.2",
       phases: {
@@ -62,11 +62,11 @@ export const createJavaScriptLambdaBuildProject = (
   });
 
 export const createPythonLambdaBuildProject = (
-  stack: cdk.Stack,
+  scope: cdk.Construct,
   lambdaFolder: string,
-  namePostfix: string = "LambdaBuild"
+  id: string = "PythonLambdaBuildProject"
 ) =>
-  new codebuild.PipelineProject(stack, `${stack.stackName}-${namePostfix}`, {
+  new codebuild.PipelineProject(scope, `${id}`, {
     buildSpec: codebuild.BuildSpec.fromObject({
       version: "0.2",
       phases: {

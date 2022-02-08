@@ -3,6 +3,7 @@ import "source-map-support/register";
 import * as cdk from "@aws-cdk/core";
 import { PermissionsBoundary } from "../cdk-common/permission-boundary";
 import { PipelineStack } from "../lib/pipeline-stack";
+import { LambdaStack, LambdaStackProps } from "../lib/lambda-stack";
 
 // Load .env file and construct tags
 require("dotenv").config();
@@ -33,9 +34,11 @@ const props = {
   cloudformation_role_arn: process.env.AWS_CLOUDFORMATION_ROLE_ARN!,
   stepfunctions_role_arn: process.env.AWS_STEPFUNCTIONS_ROLE_ARN!,
   artifact_bucket_name: process.env.AWS_ARTIFACT_BUCKET_NAME!,
+  // others
+  sagemaker_endpoint: process.env.SAGEMAKER_ENDPOINT!,
+  sns_arn_for_developer: process.env.SNS_ARN_FOR_DEVELOPER!,
 };
 
-const project_code = process.env.PROJECT_CODE!;
 const AWS_POLICY_PERM_BOUNDARY = process.env.AWS_POLICY_PERM_BOUNDARY!;
 
 const env = {
@@ -45,14 +48,32 @@ const env = {
 
 const app = new cdk.App();
 
-const pipelineStack = new PipelineStack(app, `${project_code}`, {
+/* Lambda Stack */
+const lambda_name = `${props.project_code}-lambda`;
+
+const lambdaProps: LambdaStackProps = {
+  project_code: props.project_code,
+  sagemaker_endpoint: props.sagemaker_endpoint,
+};
+
+const lambdaStack = new LambdaStack(app, lambda_name, {
+  ...lambdaProps,
+  tags,
+});
+
+/* Pipeline Stack */
+const pipelineStack = new PipelineStack(app, `${props.project_code}`, {
   ...props,
+  lambda_code: lambdaStack.lambdaCode,
   env: env,
   tags: tags,
 });
 
 /* Set permission boundary */
 if (AWS_POLICY_PERM_BOUNDARY) {
+  cdk.Aspects.of(lambdaStack).add(
+    new PermissionsBoundary(AWS_POLICY_PERM_BOUNDARY)
+  );
   cdk.Aspects.of(pipelineStack).add(
     new PermissionsBoundary(AWS_POLICY_PERM_BOUNDARY)
   );
