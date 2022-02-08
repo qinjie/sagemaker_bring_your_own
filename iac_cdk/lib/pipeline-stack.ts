@@ -189,9 +189,7 @@ export class PipelineStack extends cdk.Stack {
           new iam.ServicePrincipal("codestar-notifications.amazonaws.com"),
         ],
         actions: ["SNS:Publish"],
-        resources: [
-          `arn:aws:sns:us-east-1:${process.env.CDK_DEFAULT_ACCOUNT}:codestar-notifications-MyTopicForNotificationRules`,
-        ],
+        resources: ["*"],
         conditions: {
           StringEquals: {
             "aws:SourceAccount": process.env.CDK_DEFAULT_ACCOUNT,
