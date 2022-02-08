@@ -38,25 +38,20 @@ def save_file_to_local(file_name, file):
 
 
 @router.post('/predict_csv_file')
-async def predict_csv_file(request: Request, file_obj: UploadFile = File(...)):
+async def predict_csv_file(request: Request, csv_file: UploadFile = File(...)):
     """
     Upload a CSV file and invoke SageMaker endpoint for scoring.
     """
-    logger.info(
-        f'filename: {file_obj.filename}, content-type: {file_obj.content_type}')
-    # local_path = save_file_to_local(file_obj.filename, file_obj.file)
-    # if not local_path:
-    #     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #                         detail="Failed to save uploaded file.")
+    logger.info(f'Input file: {csv_file.filename}, {csv_file.content_type}')
 
-    payload = StringIO(str(file_obj.file.read()))
-    logger.info(f'Payload: {payload}')
+    payload = StringIO(str(csv_file.file.read(), encoding='utf-8'))
+    print(f'{SAGEMAKER_ENDPOINT}')
     response = runtime.invoke_endpoint(EndpointName=SAGEMAKER_ENDPOINT,
                                        ContentType='text/csv',
-                                       Body=payload)
-    print('Response:', response)
-    result = json.loads(response['Body'].read().decode())
-    print('Result:', result)
+                                       Body=payload.getvalue())
+    result = response['Body'].read().decode()
+    result = result.split()
+    print(f'Response:, {response} Result:, {result}')
 
     if result:
         return JSONResponse(content={'result': result},
