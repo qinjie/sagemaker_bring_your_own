@@ -36,6 +36,7 @@ const props = {
   artifact_bucket_name: process.env.AWS_ARTIFACT_BUCKET_NAME!,
   // others
   sagemaker_endpoint: process.env.SAGEMAKER_ENDPOINT!,
+  sns_arn_for_developer: process.env.SNS_ARN_FOR_DEVELOPER!,
 };
 
 const AWS_POLICY_PERM_BOUNDARY = process.env.AWS_POLICY_PERM_BOUNDARY!;
