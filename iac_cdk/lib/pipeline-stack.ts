@@ -190,11 +190,6 @@ export class PipelineStack extends cdk.Stack {
         ],
         actions: ["SNS:Publish"],
         resources: ["*"],
-        conditions: {
-          StringEquals: {
-            "aws:SourceAccount": process.env.CDK_DEFAULT_ACCOUNT,
-          },
-        },
       })
     );
     new codestar_noti.NotificationRule(this, "Notification", {
