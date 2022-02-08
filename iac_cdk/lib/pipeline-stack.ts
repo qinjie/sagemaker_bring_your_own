@@ -181,6 +181,24 @@ export class PipelineStack extends cdk.Stack {
       "sns-notification-topic",
       topicArn
     );
+    targetTopic.addToResourcePolicy(
+      new iam.PolicyStatement({
+        sid: "AWSCodeStarNotifications_publish",
+        effect: iam.Effect.ALLOW,
+        principals: [
+          new iam.ServicePrincipal("codestar-notifications.amazonaws.com"),
+        ],
+        actions: ["SNS:Publish"],
+        resources: [
+          `arn:aws:sns:us-east-1:${process.env.CDK_DEFAULT_ACCOUNT}:codestar-notifications-MyTopicForNotificationRules`,
+        ],
+        conditions: {
+          StringEquals: {
+            "aws:SourceAccount": process.env.CDK_DEFAULT_ACCOUNT,
+          },
+        },
+      })
+    );
     new codestar_noti.NotificationRule(this, "Notification", {
       detailType: codestar_noti.DetailType.BASIC,
       events: [
