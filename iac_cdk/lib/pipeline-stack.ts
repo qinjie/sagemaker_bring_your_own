@@ -161,13 +161,13 @@ export class PipelineStack extends cdk.Stack {
                 deploymentRole: cloudFormationRole,
                 runOrder: 1,
               }),
-              // createCfnDeployAction(
-              //   cdkBuildOutput,
-              //   `${props.project_code}`,
-              //   cloudFormationRole,
-              //   [],
-              //   2
-              // ),
+              createCfnDeployAction(
+                cdkBuildOutput,
+                `${props.project_code}`,
+                cloudFormationRole,
+                [],
+                2
+              ),
             ],
           },
         ],
