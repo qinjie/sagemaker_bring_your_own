@@ -15,7 +15,7 @@
         "InputDataConfig": [
           {
             "ChannelName": "training",
-            "ContentType": "text/csv",
+            "ContentType.$": "$.DataType",
             "DataSource": {
               "S3DataSource": {
                 "S3DataType": "S3Prefix",
