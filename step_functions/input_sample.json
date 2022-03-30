@@ -7,9 +7,9 @@
   "ExecutionRoleArn": "arn:aws:iam::305326993135:role/u-SageMakerExecutionRole",
   "SNSTopicArn": "arn:aws:sns:ap-southeast-1:305326993135:whitespace_alerts",
   "ToUpdateEndpoint": true,
-  "MetricDefinitions": [{
+  "MetricDefinition": {
     "Name": "validation:accuracy",
-    "Regex": "validation_accuracy=([0-9.]+)",
-  }],
+    "Regex": "validation_accuracy=([0-9.]+)"
+  },
   "DataType": "text/csv"
 }

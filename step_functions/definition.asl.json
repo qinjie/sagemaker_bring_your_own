@@ -9,7 +9,12 @@
         "TrainingJobName.$": "States.Format('{}-{}', $.ModelPrefix, $$.Execution.Name)",
         "AlgorithmSpecification": {
           "TrainingImage.$": "$.TrainingImage",
-          "MetricDefinitions": "$.MetricDefinitions",
+          "MetricDefinitions": [
+            {
+              "Name": "$.MetricDefinition.Name",
+              "Regex": "$.MetricDefinition.Regex"
+            }
+          ],
           "TrainingInputMode": "File"
         },
         "HyperParameters": {},
