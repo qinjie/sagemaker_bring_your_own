@@ -1,6 +1,6 @@
 import pickle
 
-from config.config import model_file
+from config.config import model_file, label_encoder_file
 
 
 class ScoringService(object):
@@ -9,15 +9,26 @@ class ScoringService(object):
     It has a predict function that does a prediction based on the model and the input data.
     """
     model = None  # Where we keep the model when it's loaded
+    label_encoder = None
+
+    @classmethod
+    def get_label_encoder(cls):
+        """Get the label encoder object which was saved during training.
+        """
+        if cls.label_encoder is None:
+            print(f'Load label encoder from {label_encoder_file}')
+            with open(label_encoder_file, 'rb') as f:
+                cls.label_encoder = pickle.load(f)
+        return cls.label_encoder
 
     @classmethod
     def get_model(cls):
         """Get the model object for this instance, loading it if it's not already loaded.
         """
-        if cls.model == None:
+        if cls.model is None:
             print(f"Load model from {model_file}")
-            with open(model_file, "rb") as inp:
-                cls.model = pickle.load(inp)
+            with open(model_file, "rb") as f:
+                cls.model = pickle.load(f)
         return cls.model
 
     @classmethod
@@ -30,4 +41,10 @@ class ScoringService(object):
         """
         model = cls.get_model()
         print(f"Perform prediction on {len(input)} rows of input")
-        return model.predict(input)
+        output = model.predict(input)
+
+        # # Convert output from numeric value to labels
+        label_encoder = cls.get_label_encoder()
+        result = label_encoder.inverse_transform(output)
+
+        return result

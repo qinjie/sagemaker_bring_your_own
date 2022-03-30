@@ -1,6 +1,7 @@
-test/test_dir/model/*
-test/test_dir/output/*
-app/training/model/*
+test/test_dir/model/
+test/test_dir/output/
+app/training/model/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

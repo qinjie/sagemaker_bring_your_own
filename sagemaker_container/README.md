@@ -74,6 +74,7 @@ We will mount `test_dir` folder to the `/opt/ml` folder in the container.
 ### Step by Step Debugging
 
 1. Build the docker image with name (or tag) `sagemaker-bring-your-own`.
+   * If the image is not updated, add `--no-cache` parameter to the `docker build` command.
 
 ```bash
 docker build -t sagemaker-bring-your-own .
@@ -87,7 +88,7 @@ docker build -t sagemaker-bring-your-own .
    - `-p 8080:8080`: Map the port 8080 which will be used for inference.
 
 ```bash
-docker run --rm -it --entrypoint /bin/bash -v D:/github-data-govtech/sagemaker_bring_your_own/container/test/test_dir:/opt/ml -p 8080:8080 sagemaker-bring-your-own
+docker run --rm -it --entrypoint /bin/bash -v D:/github-data-govtech/sagemaker_bring_your_own/sagemaker_container/test/test_dir:/opt/ml -p 8080:8080 sagemaker-bring-your-own
 ```
 
 3. You will be directed to bash and in the `/opt/program` folder when container runs.
