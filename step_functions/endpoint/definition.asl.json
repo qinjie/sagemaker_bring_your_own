@@ -1,0 +1,257 @@
+{
+  "Comment": "An example to train and host SageMaker model.",
+  "StartAt": "Train Model",
+  "States": {
+    "Train Model": {
+      "Comment": "Train a SageMaker model",
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sagemaker:createTrainingJob.sync",
+      "Parameters": {
+        "TrainingJobName.$": "States.Format('{}-{}', $.ModelName, $$.Execution.Name)",
+        "AlgorithmSpecification": {
+          "TrainingImage.$": "$$.Execution.Input['TrainingImage']",
+          "MetricDefinitions": [
+            {
+              "Name.$": "$.MetricDefinition.Name",
+              "Regex.$": "$.MetricDefinition.Regex"
+            }
+          ],
+          "TrainingInputMode": "File"
+        },
+        "HyperParameters": {},
+        "InputDataConfig": [
+          {
+            "ChannelName": "training",
+            "ContentType.$": "$$.Execution.Input['DataType']",
+            "DataSource": {
+              "S3DataSource": {
+                "S3DataType": "S3Prefix",
+                "S3Uri.$": "$$.Execution.Input['S3UriTraining']",
+                "S3DataDistributionType": "FullyReplicated"
+              }
+            }
+          }
+        ],
+        "OutputDataConfig": {
+          "S3OutputPath.$": "$$.Execution.Input['S3OutputPath']"
+        },
+        "ResourceConfig": {
+          "InstanceCount": 1,
+          "InstanceType": "ml.c4.2xlarge",
+          "VolumeSizeInGB": 10
+        },
+        "RoleArn.$": "$$.Execution.Input['TrainingRoleArn']",
+        "StoppingCondition": {
+          "MaxRuntimeInSeconds": 172800
+        }
+      },
+      "ResultPath": "$.resultTrainModel",
+      "Next": "Query Model Results",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "SageMaker.AmazonSageMakerException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 1,
+          "BackoffRate": 1.1
+        },
+        {
+          "ErrorEquals": [
+            "SageMaker.ResourceLimitExceededException"
+          ],
+          "IntervalSeconds": 60,
+          "MaxAttempts": 1,
+          "BackoffRate": 1
+        },
+        {
+          "ErrorEquals": [
+            "States.Timeout"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 1,
+          "BackoffRate": 1
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.taskerror",
+          "Next": "Notify Failure"
+        }
+      ]
+    },
+    "Query Model Results": {
+      "Comment": "Query metrics of trained model including past min/max value from s3 file",
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName.$": "$$.Execution.Input['LambdaFunctionName']",
+        "Payload": {
+          "TrainingJobName.$": "$.resultTrainModel.TrainingJobName",
+          "DestinationBucket.$": "$$.Execution.Input['MetricBucket']",
+          "CsvFile": "$$.Execution.Input['MetricCSV']"
+        }
+      },
+      "ResultPath": "$.resultQueryModel",
+      "Next": "Accuracy >= Past Max",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.taskerror",
+          "Next": "Notify Failure"
+        }
+      ]
+    },
+    "Accuracy >= Past Max": {
+      "Comment": "Compare metric of trained model with past max",
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.resultQueryModel['Payload']['TrainingMetrics'][0]['Value']",
+          "NumericGreaterThanEqualsPath": "$.resultQueryModel['Payload']['TrainingMetrics'][0]['PastMax']",
+          "Next": "Save Model"
+        }
+      ],
+      "Default": "Notify Failure"
+    },
+    "Save Model": {
+      "Comment": "Save the trained SageMaker model",
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sagemaker:createModel",
+      "Parameters": {
+        "PrimaryContainer": {
+          "Image.$": "$.TrainingImage",
+          "Environment": {},
+          "ModelDataUrl.$": "$.resultTrainModel.ModelArtifacts.S3ModelArtifacts"
+        },
+        "ExecutionRoleArn.$": "$$.Execution.Input['ExecutionRoleArn']",
+        "ModelName.$": "$.resultTrainModel.TrainingJobName"
+      },
+      "ResultPath": "$.resultSaveModel",
+      "Next": "Create Endpoint Config",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.taskerror",
+          "Next": "Notify Failure"
+        }
+      ]
+    },
+    "Create Endpoint Config": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sagemaker:createEndpointConfig",
+      "Parameters": {
+        "EndpointConfigName.$": "$.resultTrainModel.TrainingJobName",
+        "ProductionVariants": [
+          {
+            "InitialInstanceCount": 1,
+            "InitialVariantWeight": 1,
+            "InstanceType": "ml.t2.medium",
+            "ModelName.$": "$.resultTrainModel.TrainingJobName",
+            "VariantName": "AllTraffic"
+          }
+        ]
+      },
+      "ResultPath": "$.resultCreateEndpointConfig",
+      "Next": "Create Or Update Endpoint",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.taskerror",
+          "Next": "Notify Failure"
+        }
+      ]
+    },
+    "Create Or Update Endpoint": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$$.Execution.Input['ToUpdateEndpoint']",
+          "BooleanEquals": false,
+          "Next": "Create Endpoint"
+        },
+        {
+          "Variable": "$$.Execution.Input['ToUpdateEndpoint']",
+          "BooleanEquals": true,
+          "Next": "Update Endpoint"
+        }
+      ],
+      "Default": "Create Endpoint"
+    },
+    "Create Endpoint": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sagemaker:createEndpoint",
+      "Parameters": {
+        "EndpointConfigName.$": "$.resultTrainModel.TrainingJobName",
+        "EndpointName.$": "$.ModelName"
+      },
+      "Next": "Notify Success",
+      "ResultPath": "$.resultEndpoint",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.taskerror",
+          "Next": "Notify Failure"
+        }
+      ]
+    },
+    "Update Endpoint": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sagemaker:updateEndpoint",
+      "Parameters": {
+        "EndpointConfigName.$": "$.resultTrainModel.TrainingJobName",
+        "EndpointName.$": "$.ModelName"
+      },
+      "Next": "Notify Success",
+      "ResultPath": "$.resultEndpoint",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.taskerror",
+          "Next": "Notify Failure"
+        }
+      ]
+    },
+    "Notify Success": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "Subject": "[SUCCEED] SageMaker Model Training and Deployment",
+        "Message": "Completed train and deploy SageMaker model",
+        "TopicArn.$": "$$.Execution.Input['SNSTopicArn']",
+        "MessageAttributes": {}
+      },
+      "Next": "Succeed"
+    },
+    "Notify Failure": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "Subject": "[FAIL] SageMaker Model Training and Deployment",
+        "Message.$": "States.Format('Failed to train and deploy SageMaker model. {}: {}', $.taskerror.Error, $.taskerror.Cause)",
+        "TopicArn.$": "$$.Execution.Input['SNSTopicArn']",
+        "MessageAttributes": {}
+      },
+      "Next": "Fail"
+    },
+    "Fail": {
+      "Type": "Fail"
+    },
+    "Succeed": {
+      "Type": "Succeed"
+    }
+  }
+}

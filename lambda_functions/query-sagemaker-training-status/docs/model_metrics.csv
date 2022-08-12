@@ -1,0 +1,5 @@
+TrainingJobName,MetricName,MetricValue,Timestamp
+sagemaker-bring-your-own-d6621f25-d1fe-17f1-9dd6-c21c407f0b44,validation:accuracy,0.1,2022-03-30 14:26:34+00:00
+sagemaker-bring-your-own-d6621f25-d1fe-17f1-9dd6-c21c407f0b44,validation:accuracy,0.3,2022-03-30 14:26:34+00:00
+sagemaker-bring-your-own-d6621f25-d1fe-17f1-9dd6-c21c407f0b44,validation:accuracy,0.6,2022-03-30 14:26:34+00:00
+sagemaker-bring-your-own-d6621f25-d1fe-17f1-9dd6-c21c407f0b44,validation:accuracy,0.5,2022-03-30 14:26:34+00:00

@@ -1,0 +1,18 @@
+{
+  "ModelName": "SagemakerBringYourOwn",
+  "TrainingImage": "305326993135.dkr.ecr.ap-southeast-1.amazonaws.com/sagemaker-bring-your-own",
+  "S3UriTraining": "s3://temp-305326993135/sagemaker_bring_your_own/input/data/training",
+  "S3OutputPath": "s3://temp-305326993135/sagemaker_bring_your_own/output/models",
+  "TrainingRoleArn": "arn:aws:iam::305326993135:role/u-SageMakerExecutionRole",
+  "ExecutionRoleArn": "arn:aws:iam::305326993135:role/u-SageMakerExecutionRole",
+  "SNSTopicArn": "arn:aws:sns:ap-southeast-1:305326993135:whitespace_alerts",
+  "ToUpdateEndpoint": true,
+  "DataType": "text/csv",
+  "MetricDefinition": {
+    "Name": "validation:accuracy",
+    "Regex": "validation_accuracy=([0-9.]+)"
+  },
+  "MetricBucket": "temp-305326993135",
+  "MetricCSV": "sagemaker_bring_your_own/model_metrics.csv",
+  "LambdaFunctionName": "query-sagemaker-training-status"
+}
